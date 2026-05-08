@@ -152,16 +152,16 @@ jobs:
               "$bin"
           done
 
-      - name: Notarize macOS binaries
+      - name: Notarize strikehub binary
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          ditto -c -k dist $RUNNER_TEMP/strikehub-binaries.zip
+          # Only notarize strikehub — connectors are notarized by their own repos
+          ditto -c -k --keepParent dist/${{ matrix.binary_name }} $RUNNER_TEMP/strikehub.zip
 
-          # Submit once and capture the submission ID
-          SUBMIT_OUT=$(xcrun notarytool submit $RUNNER_TEMP/strikehub-binaries.zip \
+          SUBMIT_OUT=$(xcrun notarytool submit $RUNNER_TEMP/strikehub.zip \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
@@ -169,7 +169,6 @@ jobs:
           SUBMISSION_ID=$(echo "$SUBMIT_OUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
           echo "Submission ID: $SUBMISSION_ID"
 
-          # Poll the same submission — don't re-upload on timeout
           for attempt in 1 2 3; do
             echo "Waiting for notarization (attempt $attempt/3, 30m timeout)..."
             if xcrun notarytool wait "$SUBMISSION_ID" \
