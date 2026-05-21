@@ -1,7 +1,10 @@
 name: CI
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -14,22 +17,34 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
+      # ============= InvisiRisk Setup =============
+      - name: Setup PSE
+        uses: invisirisk/pse-action@latest
+        with:
+          app_token: ${{secrets.IR_API_KEY}}
+      # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       - run: cargo fmt --all -- --check
+      # ============= InvisiRisk Cleanup =============
+      - name: Cleanup PSE
+        if: always()
+        uses: invisirisk/pse-action@latest
+        with:
+          cleanup: "true"
+      # ============= InvisiRisk Cleanup End =============
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-           # ============= InvisiRisk Setup =============
+      # ============= InvisiRisk Setup =============
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - name: Install system dependencies
@@ -41,7 +56,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --all-targets --no-default-features --features desktop -p sh-ui -p sh-core -- -D warnings
-       # ============= InvisiRisk Cleanup =============
+      # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
         uses: invisirisk/pse-action@latest
@@ -53,12 +68,11 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-           # ============= InvisiRisk Setup =============
+      # ============= InvisiRisk Setup =============
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - name: Install system dependencies
@@ -68,14 +82,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --no-default-features --features desktop
-            # ============= InvisiRisk Cleanup =============
+      # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
         uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
-
 
   build-server:
     name: Build Server
@@ -86,7 +99,6 @@ jobs:
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -123,7 +135,7 @@ jobs:
             BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:latest
             PSE_PROXY=http://${{ env.PSE_PROXY_IP }}:3128
           secret-files: |
-            pse-ca=/etc/ssl/certs/pse.pem 
+            pse-ca=/etc/ssl/certs/pse.pem
       # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
@@ -147,12 +159,11 @@ jobs:
             arch: aarch64
             target: aarch64-apple-darwin
     steps:
-          # ============= InvisiRisk Setup =============
+      # ============= InvisiRisk Setup =============
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
 
@@ -221,14 +232,13 @@ jobs:
         with:
           name: strikehub-dmg-${{ matrix.arch }}
           path: StrikeHub-*.dmg
-            # ============= InvisiRisk Cleanup =============
+      # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
         uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
-    
 
   build-installers:
     name: Build ${{ matrix.name }}
@@ -261,12 +271,11 @@ jobs:
             binary_name: strikehub.exe
 
     steps:
-          # ============= InvisiRisk Setup =============
+      # ============= InvisiRisk Setup =============
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
 
@@ -368,35 +377,31 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: StrikeHub-*.msi
-             # ============= InvisiRisk Cleanup =============
+      # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
         uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
-   
 
   helm-lint:
     name: Helm Lint
     runs-on: ubuntu-latest
     steps:
-          # ============= InvisiRisk Setup =============
+      # ============= InvisiRisk Setup =============
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
           app_token: ${{secrets.IR_API_KEY}}
-          mode: docker-intercept
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
       - run: helm lint chart/strikehub
-
-            # ============= InvisiRisk Cleanup =============
+      # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
         uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
-
