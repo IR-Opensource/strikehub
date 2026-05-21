@@ -1,10 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,6 +18,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -44,6 +42,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -72,6 +71,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -98,6 +98,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -120,6 +121,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
           mode: docker-intercept
       # ============= InvisiRisk Setup End =============
@@ -163,6 +165,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -275,6 +278,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
@@ -393,6 +397,7 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
+          api_url: "https://app.dev.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
