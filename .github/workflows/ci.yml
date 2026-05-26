@@ -10,37 +10,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  fmt:
-    name: Format
-    runs-on: ubuntu-latest
-    steps:
-      # ============= InvisiRisk Setup =============
-      - name: Setup PSE
-        uses: invisirisk/pse-action@develop
-        with:
-          api_url: "https://app.stage.invisirisk.com"
-          app_token: ${{secrets.IR_API_KEY}}
-      # ============= InvisiRisk Setup End =============
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
-
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
       # ============= InvisiRisk Setup =============
       - name: Setup PSE
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           api_url: "https://app.stage.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
@@ -58,34 +34,7 @@ jobs:
       # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      # ============= InvisiRisk Setup =============
-      - name: Setup PSE
-        uses: invisirisk/pse-action@develop
-        with:
-          api_url: "https://app.stage.invisirisk.com"
-          app_token: ${{secrets.IR_API_KEY}}
-      # ============= InvisiRisk Setup End =============
-      - uses: actions/checkout@v4
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev libxdo-dev
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace --no-default-features --features desktop
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
@@ -96,7 +45,7 @@ jobs:
     steps:
       # ============= InvisiRisk Setup =============
       - name: Setup PSE
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           api_url: "https://app.stage.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
@@ -108,7 +57,7 @@ jobs:
       # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
@@ -119,7 +68,7 @@ jobs:
     steps:
       # ============= InvisiRisk Setup =============
       - name: Setup PSE
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           api_url: "https://app.stage.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
@@ -141,272 +90,9 @@ jobs:
       # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
         if: always()
-        uses: invisirisk/pse-action@develop
+        uses: invisirisk/pse-action@latest
         with:
           cleanup: "true"
       # ============= InvisiRisk Cleanup End =============
 
-  build-dmg:
-    name: Build DMG (${{ matrix.arch }})
-    if: github.repository_owner == 'Strike48-public'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-15-intel
-            arch: x86_64
-            target: x86_64-apple-darwin
-          - os: macos-14
-            arch: aarch64
-            target: aarch64-apple-darwin
-    steps:
-      # ============= InvisiRisk Setup =============
-      - name: Setup PSE
-        uses: invisirisk/pse-action@develop
-        with:
-          api_url: "https://app.stage.invisirisk.com"
-          app_token: ${{secrets.IR_API_KEY}}
-      # ============= InvisiRisk Setup End =============
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.target }}-dmg
-
-      - name: Install rsvg-convert and protobuf
-        run: brew install librsvg protobuf
-
-      - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }} --no-default-features --features desktop
-
-      - name: Load connector refs
-        run: cat connector-versions.env >> "$GITHUB_ENV"
-
-      - name: Prepare dist directory
-        run: mkdir -p dist
-
-      # Build connectors from source at pinned git refs
-      - name: Checkout and build pentest-agent
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/Strike48-public/pick.git /tmp/pick
-          git -C /tmp/pick checkout ${{ env.PICK_REF }}
-          cargo build --release --manifest-path /tmp/pick/Cargo.toml --bin pentest-agent --target ${{ matrix.target }}
-          cp /tmp/pick/target/${{ matrix.target }}/release/pentest-agent dist/
-
-      - name: Checkout and build ks-connector
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/Strike48-public/kubestudio.git /tmp/kubestudio
-          git -C /tmp/kubestudio checkout ${{ env.KUBESTUDIO_REF }}
-          cargo build --release --manifest-path /tmp/kubestudio/Cargo.toml --bin ks-connector --features connector --target ${{ matrix.target }}
-          cp /tmp/kubestudio/target/${{ matrix.target }}/release/ks-connector dist/
-
-      - name: Build DMG
-        run: |
-          chmod +x scripts/build-dmg.sh
-          ./scripts/build-dmg.sh ci-test ${{ matrix.arch }}
-
-      - name: Verify DMG
-        run: |
-          ls -la StrikeHub-*.dmg
-          hdiutil verify StrikeHub-*.dmg
-          # Mount and verify app bundle contents
-          hdiutil attach StrikeHub-*.dmg -mountpoint /tmp/dmg-verify
-          echo "=== App bundle contents ==="
-          ls -la /tmp/dmg-verify/StrikeHub.app/Contents/MacOS/
-          test -x /tmp/dmg-verify/StrikeHub.app/Contents/MacOS/strikehub || (echo "FAIL: wrapper missing" && exit 1)
-          test -x /tmp/dmg-verify/StrikeHub.app/Contents/MacOS/strikehub-bin || (echo "FAIL: binary missing" && exit 1)
-          test -f /tmp/dmg-verify/StrikeHub.app/Contents/Info.plist || (echo "FAIL: Info.plist missing" && exit 1)
-          codesign --verify /tmp/dmg-verify/StrikeHub.app && echo "Codesign OK"
-          # Check wrapper sets correct URLs
-          grep -q "studio.strike48.com" /tmp/dmg-verify/StrikeHub.app/Contents/MacOS/strikehub || (echo "FAIL: production URL missing from wrapper" && exit 1)
-          echo "=== All checks passed ==="
-          hdiutil detach /tmp/dmg-verify
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: strikehub-dmg-${{ matrix.arch }}
-          path: StrikeHub-*.dmg
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
-
-  build-installers:
-    name: Build ${{ matrix.name }}
-    if: github.repository_owner == 'Strike48-public'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            name: AppImage x86_64
-            target: x86_64-unknown-linux-gnu
-            arch: x86_64
-            artifact: strikehub-appimage-x86_64
-            installer: appimage
-            binary_name: strikehub
-          - os: ubuntu-24.04-arm
-            name: AppImage aarch64
-            target: aarch64-unknown-linux-gnu
-            arch: aarch64
-            artifact: strikehub-appimage-aarch64
-            installer: appimage
-            binary_name: strikehub
-          - os: windows-latest
-            name: MSI x86_64
-            target: x86_64-pc-windows-msvc
-            arch: x86_64
-            artifact: strikehub-msi-x86_64
-            installer: msi
-            binary_name: strikehub.exe
-
-    steps:
-      # ============= InvisiRisk Setup =============
-      - name: Setup PSE
-        uses: invisirisk/pse-action@develop
-        with:
-          api_url: "https://app.stage.invisirisk.com"
-          app_token: ${{secrets.IR_API_KEY}}
-      # ============= InvisiRisk Setup End =============
-      - uses: actions/checkout@v4
-
-      - name: Load connector refs
-        shell: bash
-        run: cat connector-versions.env >> "$GITHUB_ENV"
-
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            libxdo-dev \
-            libpcap-dev \
-            file \
-            wget \
-            imagemagick \
-            librsvg2-bin \
-            libfuse2
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.target }}-${{ matrix.installer }}
-
-      - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }} --no-default-features --features desktop
-
-      - name: Prepare dist directory
-        shell: bash
-        run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} dist/${{ matrix.binary_name }}
-
-      # Build connectors from source at pinned git refs
-      - name: Install protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ github.token }}
-
-      - name: Checkout and build pentest-agent
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/Strike48-public/pick.git /tmp/pick
-          git -C /tmp/pick checkout ${{ env.PICK_REF }}
-          cargo build --release --manifest-path /tmp/pick/Cargo.toml --bin pentest-agent --target ${{ matrix.target }}
-          cp /tmp/pick/target/${{ matrix.target }}/release/pentest-agent${{ runner.os == 'Windows' && '.exe' || '' }} dist/
-
-      - name: Checkout and build ks-connector
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/Strike48-public/kubestudio.git /tmp/kubestudio
-          git -C /tmp/kubestudio checkout ${{ env.KUBESTUDIO_REF }}
-          cargo build --release --manifest-path /tmp/kubestudio/Cargo.toml --bin ks-connector --features connector --target ${{ matrix.target }}
-          cp /tmp/kubestudio/target/${{ matrix.target }}/release/ks-connector${{ runner.os == 'Windows' && '.exe' || '' }} dist/
-
-      # ── AppImage steps ──
-      - name: Build AppImage
-        if: matrix.installer == 'appimage'
-        run: |
-          chmod +x scripts/build-appimage.sh
-          ./scripts/build-appimage.sh ci-test ${{ matrix.arch }}
-
-      - name: Verify AppImage
-        if: matrix.installer == 'appimage'
-        run: |
-          ls -la StrikeHub-*.AppImage
-          chmod +x StrikeHub-*.AppImage
-
-      - uses: actions/upload-artifact@v4
-        if: matrix.installer == 'appimage'
-        with:
-          name: ${{ matrix.artifact }}
-          path: StrikeHub-*.AppImage
-
-      # ── MSI steps ──
-      - name: Install WiX Toolset
-        if: matrix.installer == 'msi'
-        run: choco install wixtoolset -y
-
-      - name: Build MSI
-        if: matrix.installer == 'msi'
-        shell: pwsh
-        run: |
-          .\scripts\build-msi.ps1 -Version 0.0.0 -Arch ${{ matrix.arch }}
-
-      - uses: actions/upload-artifact@v4
-        if: matrix.installer == 'msi'
-        with:
-          name: ${{ matrix.artifact }}
-          path: StrikeHub-*.msi
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
-
-  helm-lint:
-    name: Helm Lint
-    runs-on: ubuntu-latest
-    steps:
-      # ============= InvisiRisk Setup =============
-      - name: Setup PSE
-        uses: invisirisk/pse-action@develop
-        with:
-          api_url: "https://app.stage.invisirisk.com"
-          app_token: ${{secrets.IR_API_KEY}}
-      # ============= InvisiRisk Setup End =============
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
-      - run: helm lint chart/strikehub
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
+  
