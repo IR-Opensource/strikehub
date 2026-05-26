@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -59,6 +60,8 @@ jobs:
         with:
           api_url: "https://app.stage.invisirisk.com"
           app_token: ${{secrets.IR_API_KEY}}
+          mode: sidecar
+          pse_image_tag: dev-test
       # ============= InvisiRisk Setup End =============
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
