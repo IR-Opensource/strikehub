@@ -73,6 +73,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            BUILDKIT=1
             BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:latest
             PSE_PROXY=http://${{ env.PSE_PROXY_IP }}:3128
           secret-files: |
