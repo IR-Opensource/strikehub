@@ -31,13 +31,6 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --all-targets --no-default-features --features desktop -p sh-ui -p sh-core -- -D warnings
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
 
   build-server:
     name: Build Server
@@ -54,13 +47,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --bin strikehub-server --features server --no-default-features -p sh-ui
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
+
 
   docker:
     name: Docker Build
@@ -87,12 +74,6 @@ jobs:
             PSE_PROXY=http://${{ env.PSE_PROXY_IP }}:3128
           secret-files: |
             pse-ca=/etc/ssl/certs/pse.pem
-      # ============= InvisiRisk Cleanup =============
-      - name: Cleanup PSE
-        if: always()
-        uses: invisirisk/pse-action@develop
-        with:
-          cleanup: "true"
-      # ============= InvisiRisk Cleanup End =============
+
 
   
